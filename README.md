@@ -15,8 +15,10 @@ rectpack - 2D-bin packing library.  Obtain via ```pip install rectpack```, or fr
 Extract the tiles from each of your images and masks.
 ```
 tiles = extracttiles(img1, mask1, 5)
-tiles.extend(extracttiles(img2, mask2, 5)
+tiles.extend(extracttiles(img2, mask2, 5))
 ```
 
 Then call ```layouttiles``` to arrange the tiles into a nice mosaic using 2D bin packing. 
+```
 mosaic = layouttiles(tiles)
+```
