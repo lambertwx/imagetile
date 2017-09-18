@@ -24,7 +24,10 @@ Functions that take a bunch of arbitrary-sized rectangular images and lays them 
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 import numpy as np
+import PIL
 from PIL import Image
 from rectpack import newPacker
 from skimage.measure import label, regionprops
@@ -81,7 +84,7 @@ def extracttiles(img : np.ndarray, mask : np.ndarray, pad : int):
     return tiles
 
 #%%
-def layouttiles(images):
+def layouttiles(images, drawfig=False):
     """
     Takes a bunch of images (each may have a unique size) and lays them out in a single image.
     
@@ -101,7 +104,7 @@ def layouttiles(images):
     packer = None
     
     while True:
-        packer = newPacker()
+        packer = newPacker(rotation=False)
         packer.add_bin(trialw, trialh)
         
         for i, img in enumerate(images):
@@ -118,16 +121,23 @@ def layouttiles(images):
         trialh = int(np.ceil(trialh * np.sqrt(1.5)))     
         
     # Now generate the final image
-    out = Image.new('RGB', (trialh, trialw), color=(0,0,0))
+    out = PIL.Image.new('RGB', (trialh, trialw), color=(0,0,0))
+    
+    if drawfig:
+        fig = plt.figure()
+        ax1 = fig.add_subplot(111, xlim=(0, trialw), ylim=(0,trialh), aspect='equal')
+        
     all_rects = packer.rect_list()
     for rect in all_rects:
         b, x, y, w, h, rid = rect
-        print(rid)
-        pim = Image.fromarray(images[rid])
-        out.paste(pim, (y, x))
+        print("{0} - y {1}, height {2}, x {3}, width {4}".format(rid, y, h, x, w))
+        pim = PIL.Image.fromarray(images[rid])
+        out.paste(pim, (x, y))
     
-    return np.array(out)
-    
+        if drawfig:
+            rect = patches.Rectangle((x,y), w, h)
+            ax1.add_patch(rect)
         
+    return np.array(out)
        
         
