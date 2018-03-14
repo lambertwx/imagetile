@@ -43,6 +43,26 @@ def makebool3mask(mask1 : np.ndarray):
     return mask3
 
 #%%
+def extracttile_for_region(reg, img : np.ndarray, labeled : np.ndarray, pad : int):
+    rtop = reg.bbox[0]
+    rleft = reg.bbox[1]
+    rbot = reg.bbox[2]
+    rright = reg.bbox[3]
+    
+    ttop = max(0, rtop - pad)
+    tleft = max(0, rleft - pad)
+    tright = min(img.shape[1], rright + pad)
+    tbot = min(img.shape[0], rbot + pad)
+
+    # Now we want to copy the region bounded by the tile coords into a new image.
+    # However that bounding box might also include another region in which the mask was on.
+    # So we first need to be sure that we have an image in which only this region is present.
+    regmask = makebool3mask(labeled == reg.label)
+    c = np.zeros(img.shape, dtype=img.dtype)
+    np.copyto(c, img, where=regmask)
+    return c[ttop:tbot,tleft:tright,:].copy()
+
+#%%
 def extracttiles(img : np.ndarray, mask : np.ndarray, pad : int):
     """
     Extract a set of tiles, one for each connected component in the mask image, from a single image.
@@ -63,23 +83,7 @@ def extracttiles(img : np.ndarray, mask : np.ndarray, pad : int):
     
     tiles = []
     for reg in regions:   
-        rtop = reg.bbox[0]
-        rleft = reg.bbox[1]
-        rbot = reg.bbox[2]
-        rright = reg.bbox[3]
-        
-        ttop = max(0, rtop - pad)
-        tleft = max(0, rleft - pad)
-        tright = min(img.shape[1], rright + pad)
-        tbot = min(img.shape[0], rbot + pad)
-    
-        # Now we want to copy the region bounded by the tile coords into a new image.
-        # However that bounding box might also include another region in which the mask was on.
-        # So we first need to be sure that we have an image in which only this region is present.
-        regmask = makebool3mask(labeled == reg.label)
-        c = np.zeros(img.shape, dtype=img.dtype)
-        np.copyto(c, img, where=regmask)
-        tiles.append( c[ttop:tbot,tleft:tright,:].copy() )
+        tiles.append( extracttile_for_region(reg, img, labeled, pad) )
         
     return tiles
 
@@ -140,4 +144,9 @@ def layouttiles(images, drawfig=False):
         
     return np.array(out)
        
+#%%
+if False:
+    fig = plt.figure()
+    ax1 = fig.add_subplot(111, xlim=(0, 100), ylim=(0,100), aspect='equal')
+    ax1.add_patch(patches.Rectangle((10,20), 100, 200)) 
         
